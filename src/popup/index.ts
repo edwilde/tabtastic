@@ -166,7 +166,10 @@ function renderProjectView(project: Project, windowTitle: string): void {
   confirmBtn.addEventListener('click', async () => {
     const label = labelInput.value.trim();
     if (!label) return;
+    confirmBtn.classList.add('celebrate');
     await send({ type: 'saveNamedSnapshot', projectId: project.id, label });
+    // Brief celebration before re-render so the user sees the affordance fire.
+    await new Promise((r) => setTimeout(r, 180));
     render();
   });
   labelInput.addEventListener('keydown', (e) => {
@@ -175,7 +178,12 @@ function renderProjectView(project: Project, windowTitle: string): void {
   });
 
   r.append(el('div', { class: 'section' }, ['Auto']));
-  if (auto.length === 0) r.append(el('div', { class: 'empty' }, ['No auto-saves yet']));
+  if (auto.length === 0) {
+    const e = el('div', { class: 'empty first-time' });
+    e.append(el('strong', {}, ['Auto-saves coming soon']));
+    e.append(document.createTextNode('Make a tab change and Tabtastic! takes a snapshot in the background.'));
+    r.append(e);
+  }
   for (const s of auto) {
     r.append(makeSnapRow(project.id, s, fmtAge(s.takenAt), false));
   }
