@@ -1,6 +1,7 @@
 # Tabtastic! — Design
 
 **Name:** Tabtastic!
+**Subtitle:** Window Time Machine
 **Tagline (manifest `description`):** Save and restore your Chrome project windows — tab groups, colors, names, and all.
 **Date:** 2026-05-01
 **Status:** Design validated, ready for implementation planning
