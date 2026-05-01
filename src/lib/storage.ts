@@ -15,8 +15,8 @@ export interface Storage {
 type StorageDeps = Pick<BrowserApi, 'storageGet' | 'storageSet'>;
 
 export function createStorage(browser: StorageDeps): Storage {
-  // Per-process serialization queue: ensures concurrent upserts don't clobber.
-  // T17 will extend this if the simple chain isn't sufficient.
+  // T17 — per-process serialization queue: concurrent upserts/deletes/replaces
+  // queue on a single chain, so read-modify-write never clobbers.
   let chain: Promise<void> = Promise.resolve();
   const serialize = <T>(work: () => Promise<T>): Promise<T> => {
     const next = chain.then(work, work);
