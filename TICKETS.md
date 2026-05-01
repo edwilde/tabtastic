@@ -484,6 +484,32 @@ If a user tries to save a window with a project name already bound to a differen
 **Priority:** P2 · **Blockers:** T02 · **Parallelism:** can run in parallel with T15, T16
 **Archive ref:** Task 3 (storage layer) — same module, but adding a per-project promise-chain wrapper around `upsertProject`. **Stale:** the archive's `storage.ts` does plain read-modify-write with no concurrency guard.
 
+---
+
+# P3 — Design polish (run via `/impeccable` and `/delight`)
+
+These tickets ship after P0–P2 are functionally complete. They're driven by the design skills (`/impeccable` for production-grade craft, `/delight` for joy moments) — the spec is "make it feel good", not feature work.
+
+## T18 — Impeccable popup design pass (`/impeccable`)
+
+**Priority:** P3 · **Blockers:** T06, T11, T15, T16 · **Parallelism:** can run in parallel with T19/T20
+**Goal:** Replace the functional popup styling with a distinctive, production-grade visual language. Type, spacing, color, hierarchy, dark-mode support. Keep all interactions unchanged.
+**Owned files:** `src/popup/styles.css` (rewrite), possibly `src/popup/index.html` (semantic tweaks), `src/popup/index.ts` (class name swaps only).
+**Acceptance:** popup looks like a polished product, not a debug menu. Works at 320px–380px width. Respects `prefers-color-scheme`.
+
+## T19 — Impeccable options page design pass (`/impeccable`)
+
+**Priority:** P3 · **Blockers:** T12, T13, T14 · **Parallelism:** can run in parallel with T18/T20
+**Goal:** Same energy applied to the all-projects manager. Real table styling, comfortable density, thoughtful empty states.
+**Owned files:** `src/options/styles.css` (rewrite), `src/options/index.html` (semantic tweaks), `src/options/index.ts` (class swaps).
+
+## T20 — Delight pass (`/delight`)
+
+**Priority:** P3 · **Blockers:** T18, T19 · **Parallelism:** none (final pass)
+**Goal:** Add small joy moments — saving a snapshot animates with a satisfying confirmation, restore feedback feels celebratory, the empty state has a wink. Subtle, never annoying.
+**Owned files:** appends to popup/options CSS + small TS snippets for transitions.
+**Acceptance:** at least three identifiable delight moments (snapshot saved, restore complete, first project created). All animations respect `prefers-reduced-motion`.
+
 ### Goal
 Serialize concurrent `upsertProject` calls so the read-modify-write cycle is atomic per project. Without this, two simultaneous auto-save ticks (e.g. from blur-flush across two windows) can clobber each other.
 
