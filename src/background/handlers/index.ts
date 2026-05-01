@@ -3,3 +3,4 @@
 import './autosave';
 import './project';
 import './snapshot';
+import './export-import';

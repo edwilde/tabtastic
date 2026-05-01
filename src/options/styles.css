@@ -1,0 +1,171 @@
+:root {
+  --bg: #fafafa;
+  --surface: #fff;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #00acc1;
+  --accent-fg: #fff;
+  --danger: #b91c1c;
+  font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0d12;
+    --surface: #14171c;
+    --fg: #f3f4f6;
+    --muted: #9ca3af;
+    --border: #2a2e36;
+    --accent: #22d3ee;
+    --accent-fg: #0b0d12;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  margin: 0;
+  font-size: 14px;
+}
+header {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 24px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+header h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+header .tagline {
+  color: var(--muted);
+  font-size: 13px;
+}
+header .actions {
+  display: flex;
+  gap: 8px;
+}
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+th,
+td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 0, 0, 0.02);
+}
+tr:last-child td {
+  border-bottom: none;
+}
+td.actions {
+  text-align: right;
+  white-space: nowrap;
+}
+button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: 6px;
+  cursor: pointer;
+}
+button:hover {
+  border-color: var(--accent);
+}
+button.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+button.danger {
+  color: var(--danger);
+}
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 64px 16px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+.empty h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--fg);
+  font-weight: 500;
+}
+input[type='text'] {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--fg);
+  width: 100%;
+  box-sizing: border-box;
+}
+dialog {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  padding: 24px;
+  max-width: 440px;
+}
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+dialog h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+dialog fieldset {
+  border: none;
+  padding: 0;
+  margin: 12px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+dialog menu {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.banner {
+  background: rgba(0, 172, 193, 0.08);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
