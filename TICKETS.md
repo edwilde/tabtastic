@@ -2,6 +2,8 @@
 
 Backlog for the Tabtastic! Chrome extension (a.k.a. *Window Time Machine*).
 
+> **Status: ✅ All tickets shipped (T01–T21).** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.1.0.zip`. CI workflow at `.github/workflows/ci.yml`.
+
 - **Design doc:** [`docs/plans/2026-05-01-chrome-project-snapshots-design.md`](docs/plans/2026-05-01-chrome-project-snapshots-design.md) — the validated design. Always trust this over the archived plan when they disagree.
 - **Archived plan (cache):** [`.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md`](.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md) — original monolithic plan with full code samples for every module. **Do not execute it directly** (the devils-advocate pass found blocking flaws), but **`/writing-plans` MUST read the relevant `Task N` section from this file when planning a ticket** — it captures the original vision, code structure, and test shapes that are still mostly correct. Each ticket below lists which archived task(s) to reference and which parts are now stale.
 
@@ -47,7 +49,7 @@ The ambition is: **after P0 the user can manually save and restore project windo
 
 ---
 
-## T01 — Project scaffolding & shared module skeletons
+## ✅ T01 — Project scaffolding & shared module skeletons
 
 **Priority:** P0 · **Blockers:** none · **Parallelism:** blocks everything else
 **Archive ref:** Task 1 (scaffolding code is correct) + the new `tests/setup/chrome-stub.ts` block in the archive's vitest section (added during devils-advocate review). **Stale:** original Task 1 didn't include the chrome-stub setupFile — use the corrected version.
@@ -81,7 +83,7 @@ Create a buildable Vite + crxjs + Vitest TypeScript project with empty stubs for
 
 ---
 
-## T02 — Data model + storage layer
+## ✅ T02 — Data model + storage layer
 
 **Priority:** P0 · **Blockers:** T01 · **Parallelism:** can run in parallel with T03, T04, T05, T07, T08, T09
 **Archive ref:** Task 3 (storage layer) — code and tests are accurate. Types come from Task 3 (Step 1) and the type block in the archive's "Data model" section. **Stale:** none.
@@ -114,7 +116,7 @@ export function createStorage(browser: Pick<BrowserApi, 'storageGet'|'storageSet
 
 ---
 
-## T03 — Snapshot capture (window → Snapshot)
+## ✅ T03 — Snapshot capture (window → Snapshot)
 
 **Priority:** P0 · **Blockers:** T01, T02 (for types) · **Parallelism:** can run in parallel with T04, T05
 **Archive ref:** Task 4 (capture). The capture code and tests transfer directly. **Stale:** the captured `windowName` field must NOT be used to overwrite `project.name` (that bug is fixed at the autosave layer in T10, but T03 should still capture it for display).
@@ -139,7 +141,7 @@ Pure-ish function `captureSnapshot(browser, windowId, newId, now)` that reads th
 
 ---
 
-## T04 — Restore engine (Snapshot → new window)
+## ✅ T04 — Restore engine (Snapshot → new window)
 
 **Priority:** P0 · **Blockers:** T01, T02 · **Parallelism:** can run in parallel with T03, T05
 **Archive ref:** Task 9 (restore). Function shape, error reporting, and the `RestoreFailure`/`RestoreResult` types are accurate. **Stale:** the seed-tab logic that reads `win?.tabs?.[0]?.id` is unreliable in MV3 — replace per the "Pitfalls" section below (open with `about:blank`, create all tabs explicitly, close the seed). The fake-browser test that returns a populated `tabs` array is correspondingly outdated.
@@ -163,7 +165,7 @@ Pure-ish function `restoreSnapshot(browser, snap)` that opens a fresh window and
 
 ---
 
-## T05 — Bindings (windowId ↔ projectId)
+## ✅ T05 — Bindings (windowId ↔ projectId)
 
 **Priority:** P0 · **Blockers:** T01, T02 · **Parallelism:** can run in parallel with T03, T04
 **Archive ref:** Task 7 (bindings) — the `Map`-based API shape and first-wins collision handling transfer. **Stale:** the `rebuild(windows, projects)` strategy that matches `window.title` to `project.name` is broken (title is the active tab's title, not a stable window name). Replace with `chrome.storage.session`-backed persistence + a `hydrate()` method as specified above. Cross-restart rebinding is now user-driven via the popup, not automatic.
@@ -201,7 +203,7 @@ interface Bindings {
 
 ---
 
-## T06 — Popup UI (manual save & restore)
+## ✅ T06 — Popup UI (manual save & restore)
 
 **Priority:** P0 · **Blockers:** T02, T03, T04, T05 · **Parallelism:** none after blockers (UI integrates everything)
 **Archive ref:** Task 11 (popup HTML/CSS/TS) and the relevant message handlers in Task 10 (`getCurrentWindowProjectId`, `saveAsProject`, `saveNamedSnapshot`, `restoreSnapshot`, `deleteSnapshot`, `listProjects`). **Stale:** the `prompt('Snapshot name', ...)` call must be replaced with an inline DOM input — `prompt()` is blocked in extension popups. Also: the dynamic `await import('../lib/capture')` inside the message handler should be a static import. The "auto-saves list" portion of the popup ships **empty** in T06 and is filled in by T10/T11.
@@ -230,7 +232,7 @@ The current-window-focused popup. Lets the user save the current window as a pro
 
 ---
 
-## T07 — Icons + manifest finalization
+## ✅ T07 — Icons + manifest finalization
 
 **Priority:** P0 · **Blockers:** T01 · **Parallelism:** can run in parallel with anything
 **Archive ref:** Task 13 (icons + manifest). **Stale:** ordering — in the archive this came after the popup smoke test, which left the smoke test running with no icons. Doing it in P0 (it can land in parallel with T02–T05) means the first end-to-end smoke has icons.
@@ -254,7 +256,7 @@ After P0 ships and works manually, layer in auto-save. **All P1 tickets can be p
 
 ---
 
-## T08 — `chrome.alarms`-based debouncer
+## ✅ T08 — `chrome.alarms`-based debouncer
 
 **Priority:** P1 · **Blockers:** T01 · **Parallelism:** can run in parallel with T09
 **Archive ref:** Task 6 (debouncer) — interface shape and the per-key tests transfer in spirit. **Stale (critical):** the entire `setTimeout`-based implementation is dead-on-arrival under MV3 service-worker eviction. Rebuild around `chrome.alarms` per this ticket's spec; the `vi.useFakeTimers()` tests must be replaced with a fake `chrome.alarms` surface.
@@ -288,7 +290,7 @@ interface AlarmDebouncer {
 
 ---
 
-## T09 — Time Machine retention (4-slot rotation)
+## ✅ T09 — Time Machine retention (4-slot rotation)
 
 **Priority:** P1 · **Blockers:** T01, T02 (for types) · **Parallelism:** can run in parallel with T08
 **Archive ref:** Task 5 (retention). The slot/age constants and the test cases are useful as a starting point. **Stale (critical):** the chained-promotion algorithm in the archived `rotate()` produces incorrect results — manual trace shows `day` ends with the displaced hour-snapshot, not `null` as the test asserts. Use the **re-bucketing algorithm** in this ticket's spec instead, and rewrite the test assertions accordingly.
@@ -325,7 +327,7 @@ For each candidate ∈ [fresh, slots.hour, slots.day, slots.week, slots.month]:
 
 ---
 
-## T10 — Auto-save engine wiring
+## ✅ T10 — Auto-save engine wiring
 
 **Priority:** P1 · **Blockers:** T03 (capture), T05 (bindings), T08 (debouncer), T09 (retention), T02 (storage) · **Parallelism:** none
 **Archive ref:** Task 8 (`autosave.ts` composition) + Task 10 (service worker listener wiring). **Stale:** (1) the `name: snap.windowName || project.name` line in the archive's `autosave.ts` silently renames projects to active-tab titles — drop it. (2) the archive registers `chrome.tabGroups.onMoved`, which doesn't exist and crashes the worker — remove. (3) `chrome.tabs.onUpdated` should filter by `info.status === 'complete'` to avoid debouncer spam. (4) `chrome.windows.getAll` calls need `populate: true` for any place that reads `window.title`.
@@ -354,7 +356,7 @@ Wire everything together: tab/group events → debouncer → capture → retenti
 
 ---
 
-## T11 — Window blur flush
+## ✅ T11 — Window blur flush
 
 **Priority:** P1 · **Blockers:** T08, T10 · **Parallelism:** none
 **Archive ref:** Task 10 — the `chrome.windows.onFocusChanged` block. **Stale:** the archive uses `bindings.allBoundWindows?.()` with an optional-chain guard; in T05/T11 `allBoundWindows` is a required interface member, so drop the guard.
@@ -378,7 +380,7 @@ These tickets ship after the auto-save tier is stable. Most can be picked up in 
 
 ---
 
-## T12 — Options page (all-projects manager)
+## ✅ T12 — Options page (all-projects manager)
 
 **Priority:** P2 · **Blockers:** T02, T06 (handlers) · **Parallelism:** can run in parallel with T08–T11 (different files)
 **Archive ref:** Task 12 (options page HTML/CSS/TS). **Stale:** `list.addEventListener('click', ..., { once: true })` is a bug — remove the `{ once: true }` option. Also replace any `prompt()`/`confirm()` calls with DOM-based UI (`<dialog>` or custom modal).
@@ -403,7 +405,7 @@ Wider page than the popup, listing every saved project with rename / delete / re
 
 ---
 
-## T13 — Export all projects → JSON
+## ✅ T13 — Export all projects → JSON
 
 **Priority:** P2 · **Blockers:** T02, T12 · **Parallelism:** can run in parallel with T14 (different handler files; both append to the options page UI)
 **Archive ref:** Task 12 (export button + `exportAll` handler). The Blob-download approach transfers directly. **Stale:** the archive's handler lives in the monolithic service-worker file; in this ticket layout it lives in `src/background/handlers/export.ts`.
@@ -422,7 +424,7 @@ Wider page than the popup, listing every saved project with rename / delete / re
 
 ---
 
-## T14 — Import projects with conflict resolution
+## ✅ T14 — Import projects with conflict resolution
 
 **Priority:** P2 · **Blockers:** T02, T12, T13 (uses same JSON shape) · **Parallelism:** none after blockers
 **Archive ref:** Task 12 (`importAll` handler + file-input wiring). **Stale:** the archive uses `prompt('On conflict: "overwrite", "skip", or "rename"?', 'overwrite')` — replace with a proper modal. Also the conflict resolver should be a pure function in its own file so it can be unit-tested.
@@ -442,7 +444,7 @@ Wider page than the popup, listing every saved project with rename / delete / re
 
 ---
 
-## T15 — Restore failure report panel
+## ✅ T15 — Restore failure report panel
 
 **Priority:** P2 · **Blockers:** T04, T06 · **Parallelism:** can run in parallel with T16, T17
 **Archive ref:** Task 9 (the design doc's "restore report" mention) and the failures-array shape in `src/lib/restore.ts`. **Stale:** the archive doesn't include UI for the failure panel — it's a new addition. Use the design doc's edge-cases table as the spec.
@@ -461,7 +463,7 @@ After a restore, if the `failures` array is non-empty, show a small panel listin
 
 ---
 
-## T16 — Two-windows-same-name conflict UI
+## ✅ T16 — Two-windows-same-name conflict UI
 
 **Priority:** P2 · **Blockers:** T05, T06 · **Parallelism:** can run in parallel with T15, T17
 **Archive ref:** the design doc's edge-cases table ("Two windows want the same project name"). **Stale:** the archive has no implementation for this — fully new UI in this ticket.
@@ -479,7 +481,7 @@ If a user tries to save a window with a project name already bound to a differen
 
 ---
 
-## T17 — Storage write serialization
+## ✅ T17 — Storage write serialization
 
 **Priority:** P2 · **Blockers:** T02 · **Parallelism:** can run in parallel with T15, T16
 **Archive ref:** Task 3 (storage layer) — same module, but adding a per-project promise-chain wrapper around `upsertProject`. **Stale:** the archive's `storage.ts` does plain read-modify-write with no concurrency guard.
@@ -490,20 +492,20 @@ If a user tries to save a window with a project name already bound to a differen
 
 These tickets ship after P0–P2 are functionally complete. They're driven by the design skills (`/impeccable` for production-grade craft, `/delight` for joy moments) — the spec is "make it feel good", not feature work.
 
-## T18 — Impeccable popup design pass (`/impeccable`)
+## ✅ T18 — Impeccable popup design pass (`/impeccable`)
 
 **Priority:** P3 · **Blockers:** T06, T11, T15, T16 · **Parallelism:** can run in parallel with T19/T20
 **Goal:** Replace the functional popup styling with a distinctive, production-grade visual language. Type, spacing, color, hierarchy, dark-mode support. Keep all interactions unchanged.
 **Owned files:** `src/popup/styles.css` (rewrite), possibly `src/popup/index.html` (semantic tweaks), `src/popup/index.ts` (class name swaps only).
 **Acceptance:** popup looks like a polished product, not a debug menu. Works at 320px–380px width. Respects `prefers-color-scheme`.
 
-## T19 — Impeccable options page design pass (`/impeccable`)
+## ✅ T19 — Impeccable options page design pass (`/impeccable`)
 
 **Priority:** P3 · **Blockers:** T12, T13, T14 · **Parallelism:** can run in parallel with T18/T20
 **Goal:** Same energy applied to the all-projects manager. Real table styling, comfortable density, thoughtful empty states.
 **Owned files:** `src/options/styles.css` (rewrite), `src/options/index.html` (semantic tweaks), `src/options/index.ts` (class swaps).
 
-## T20 — Delight pass (`/delight`)
+## ✅ T20 — Delight pass (`/delight`)
 
 **Priority:** P3 · **Blockers:** T18, T19 · **Parallelism:** none (final pass)
 **Goal:** Add small joy moments — saving a snapshot animates with a satisfying confirmation, restore feedback feels celebratory, the empty state has a wink. Subtle, never annoying.
@@ -544,3 +546,27 @@ After T01, the following can run **simultaneously** with no merge conflicts (eac
 - **Wave B (after Wave A):** T06, T10, T12 — three in parallel
 - **Wave C (after Wave B):** T11, T13, T15, T16, T17 — five in parallel
 - **Wave D (after T13):** T14
+
+---
+
+# P4 — Build & release infrastructure
+
+## ✅ T21 — GitHub Actions CI: tests + build artifact
+
+**Priority:** P4 · **Blockers:** T01 · **Parallelism:** can run in parallel with anything
+
+### Goal
+Every push and pull request runs typecheck + tests + build. Each successful run uploads `tabtastic-<version>.zip` (the loadable extension) as a downloadable artifact. Pushing a tag like `v0.2.0` additionally publishes a GitHub Release with the zip attached.
+
+### Owned files
+- Create: `.github/workflows/ci.yml`
+
+### Acceptance
+- Push to any branch → CI workflow runs `npm ci`, `npm run typecheck`, `npm test`, `npm run build`
+- Successful runs upload `tabtastic-<version>.zip` as an artifact (retention 30 days)
+- Tag matching `v*` triggers an additional `release` job that creates a GitHub Release with the zip attached and auto-generated release notes
+
+### Pitfalls
+- Vite hashes asset filenames — always zip the entire `dist/` directory, not a curated subset.
+- Pin Node 20 to match local dev (older versions don't support all the modern syntax used).
+- Don't cache `dist/` in npm cache — only `node_modules`.

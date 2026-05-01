@@ -4,3 +4,8 @@ dist/
 *.log
 .env
 .env.local
+
+# Releases ARE committed (so the prebuilt zip ships with the source).
+# CI also produces the same artifact on every run.
+!releases/
+
