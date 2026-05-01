@@ -1,0 +1,99 @@
+import { autoSave, bindings, ensureHydrated, storage } from '../runtime';
+import type {
+  DeleteProjectRequest,
+  FindProjectByNameRequest,
+  GetCurrentRequest,
+  ListProjectsRequest,
+  RebindWindowRequest,
+  RenameProjectRequest,
+  SaveAsProjectRequest,
+} from '../../lib/messages';
+
+type Req =
+  | GetCurrentRequest
+  | SaveAsProjectRequest
+  | RebindWindowRequest
+  | ListProjectsRequest
+  | RenameProjectRequest
+  | DeleteProjectRequest
+  | FindProjectByNameRequest;
+
+chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
+  if (
+    msg?.type !== 'getCurrent' &&
+    msg?.type !== 'saveAsProject' &&
+    msg?.type !== 'rebindWindow' &&
+    msg?.type !== 'listProjects' &&
+    msg?.type !== 'renameProject' &&
+    msg?.type !== 'deleteProject' &&
+    msg?.type !== 'findProjectByName'
+  ) {
+    return undefined;
+  }
+  (async () => {
+    await ensureHydrated();
+    try {
+      if (msg.type === 'getCurrent') {
+        const win = await chrome.windows.getLastFocused({ populate: false });
+        const wid = win.id;
+        const projectId = wid !== undefined ? bindings.projectIdFor(wid) : undefined;
+        const project = projectId ? await storage.getProject(projectId) : undefined;
+        sendResponse({
+          ok: true,
+          windowId: wid,
+          windowTitle: (win as unknown as { title?: string }).title ?? '',
+          projectId,
+          project,
+        });
+      } else if (msg.type === 'saveAsProject') {
+        // Rebind path is handled separately via rebindWindow.
+        const id = crypto.randomUUID();
+        const project = {
+          id,
+          name: msg.name,
+          createdAt: Date.now(),
+          autoSlots: { hour: null, day: null, week: null, month: null },
+          named: [],
+        };
+        await storage.upsertProject(project);
+        await bindings.bind(msg.windowId, id);
+        await autoSave.tick(msg.windowId, id);
+        sendResponse({ ok: true, projectId: id });
+      } else if (msg.type === 'rebindWindow') {
+        const project = await storage.getProject(msg.projectId);
+        if (!project) {
+          sendResponse({ ok: false, error: 'project not found' });
+          return;
+        }
+        // Drop any existing binding of this project, then bind the window.
+        await bindings.unbindProject(msg.projectId);
+        await bindings.bind(msg.windowId, msg.projectId);
+        await autoSave.tick(msg.windowId, msg.projectId);
+        sendResponse({ ok: true });
+      } else if (msg.type === 'listProjects') {
+        const projects = await storage.listProjects();
+        sendResponse({ ok: true, projects });
+      } else if (msg.type === 'renameProject') {
+        const p = await storage.getProject(msg.projectId);
+        if (!p) {
+          sendResponse({ ok: false, error: 'project not found' });
+          return;
+        }
+        p.name = msg.name;
+        await storage.upsertProject(p);
+        sendResponse({ ok: true });
+      } else if (msg.type === 'deleteProject') {
+        await storage.deleteProject(msg.projectId);
+        await bindings.unbindProject(msg.projectId);
+        sendResponse({ ok: true });
+      } else if (msg.type === 'findProjectByName') {
+        const all = await storage.listProjects();
+        const project = all.find((p) => p.name === msg.name) ?? null;
+        sendResponse({ ok: true, project });
+      }
+    } catch (e) {
+      sendResponse({ ok: false, error: (e as Error).message });
+    }
+  })();
+  return true; // async response
+});
