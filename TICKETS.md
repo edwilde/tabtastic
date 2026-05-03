@@ -2,7 +2,7 @@
 
 Backlog for the Tabtastic! Chrome extension (a.k.a. *Window Time Machine*).
 
-> **Status: ✅ All tickets shipped (T01–T21).** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.1.0.zip`. CI workflow at `.github/workflows/ci.yml`.
+> **Status: ✅ All tickets shipped (T01–T25). Current version: 0.2.0.** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.2.0.zip`. CI workflow at `.github/workflows/ci.yml`.
 
 - **Design doc:** [`docs/plans/2026-05-01-chrome-project-snapshots-design.md`](docs/plans/2026-05-01-chrome-project-snapshots-design.md) — the validated design. Always trust this over the archived plan when they disagree.
 - **Archived plan (cache):** [`.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md`](.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md) — original monolithic plan with full code samples for every module. **Do not execute it directly** (the devils-advocate pass found blocking flaws), but **`/writing-plans` MUST read the relevant `Task N` section from this file when planning a ticket** — it captures the original vision, code structure, and test shapes that are still mostly correct. Each ticket below lists which archived task(s) to reference and which parts are now stale.
