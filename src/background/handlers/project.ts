@@ -34,7 +34,10 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
     await ensureHydrated();
     try {
       if (msg.type === 'getCurrent') {
-        const win = await chrome.windows.getLastFocused({ populate: false });
+        // T22 — populate: true so `title` is hydrated. When the user has set
+        // Chrome's "Name window" value, the OS title prefix surfaces through
+        // this field; otherwise it falls back to the active tab's title.
+        const win = await chrome.windows.getLastFocused({ populate: true });
         const wid = win.id;
         const projectId = wid !== undefined ? bindings.projectIdFor(wid) : undefined;
         const project = projectId ? await storage.getProject(projectId) : undefined;

@@ -94,19 +94,47 @@ h1::before {
   flex-shrink: 0;
 }
 
-h1 .gear {
+h1 button.gear {
   margin-left: auto;
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1;
   color: var(--muted);
-  text-decoration: none;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
-  transition: color 120ms, background 120ms;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: color 120ms, background 120ms, border-color 120ms;
 }
-h1 .gear:hover {
+h1 button.gear:hover,
+h1 button.gear:focus-visible {
   color: var(--accent);
   background: var(--accent-glow);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.options-link {
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.options-link:hover {
+  text-decoration: underline;
+}
+
+.banner.restore-notice {
+  margin-top: 8px;
+}
+.banner.restore-notice .subtle {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.banner.restore-notice strong {
+  color: var(--fg);
+  font-weight: 600;
 }
 
 /* --- Window meta line --- */

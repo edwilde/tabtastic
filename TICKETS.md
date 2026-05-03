@@ -570,3 +570,90 @@ Every push and pull request runs typecheck + tests + build. Each successful run 
 - Vite hashes asset filenames — always zip the entire `dist/` directory, not a curated subset.
 - Pin Node 20 to match local dev (older versions don't support all the modern syntax used).
 - Don't cache `dist/` in npm cache — only `node_modules`.
+
+---
+
+# P5 — Post-launch refinements
+
+## ✅ T22 — Pre-fill project name from Chrome "Name Window" value
+
+**Priority:** P5 · **Blockers:** T06 · **Parallelism:** can run with T23–T25
+
+### Goal
+When the user clicks the popup on an unbound window, pre-fill the project-name input with the value Chrome already shows for the window — including the value set via right-click → **Name Window**, when present.
+
+### Owned files
+- Modify: `src/background/handlers/project.ts` (use `{ populate: true }` so the `title` field is hydrated)
+
+### Acceptance
+- Window with no Name Window set → input pre-filled with the active tab's title.
+- Window with Name Window set → input pre-filled with that name (Chrome surfaces it as the title prefix).
+- User can always overwrite the suggestion before saving.
+
+### Pitfalls
+- `chrome.windows.get/getLastFocused` only populates `title` when called with `{ populate: true }` (the underlying tabs are needed before the title resolves).
+- Chrome doesn't expose the Name Window value as a discrete field — we read the OS-level title and trust the user to edit if it's noisy.
+
+---
+
+## ✅ T23 — Restore stores project name + documents Name Window limitation
+
+**Priority:** P5 · **Blockers:** T04, T06 · **Parallelism:** can run with T22, T24, T25
+
+### Goal
+After a restore, the new window is bound to the project so the popup shows the right name immediately. Because Chrome's MV3 extension API has no setter for the OS-level window name, we surface a one-line nudge in the restore feedback so the user can re-apply Chrome's **Name Window** themselves.
+
+### Owned files
+- Modify: `src/background/handlers/snapshot.ts` (already binds the new window — keep it)
+- Modify: `src/popup/index.ts` (post-restore notice with the project's name and a tip)
+
+### Acceptance
+- Restoring a snapshot opens a fresh window already bound to the project (popup shows the project name on the new window).
+- A small, dismissable notice tells the user "To restore the OS window title, right-click a tab → Name window → '{project name}'."
+- Notice respects the existing failure-panel pattern.
+
+### Pitfalls
+- `chrome.windows.update(id, ...)` does **not** accept a title/name in MV3. There is no programmatic way to set the Name Window value. The notice is the best we can do.
+
+---
+
+## ✅ T24 — Manage-all-projects: Restore picker per row
+
+**Priority:** P5 · **Blockers:** T12 · **Parallelism:** can run with T22, T23, T25
+
+### Goal
+On the options page, add a **Restore** button next to Rename / Delete. Clicking it expands an inline panel listing every snapshot (named first, then auto slots labelled hour/day/week/month) so the user can pick which one to open in a new window — straight from the manager, without first switching to the project's window.
+
+### Owned files
+- Modify: `src/options/index.ts` (per-row expand panel + restore wiring)
+- Modify: `src/options/styles.css` (panel styling)
+
+### Acceptance
+- Clicking **Restore** on a row expands a panel with all named snapshots and any populated auto slots.
+- Each entry has its own **Open** button that calls the existing `restoreSnapshot` message and opens a fresh window.
+- Re-clicking **Restore** (or **Close**) collapses the panel.
+- If a project has zero snapshots, the panel says "No snapshots yet."
+
+---
+
+## ✅ T25 — Bug: cog in popup top-right does nothing
+
+**Priority:** P5 · **Blockers:** T06 · **Parallelism:** can run with T22, T23, T24
+
+### Goal
+The ⚙ button in the project popup heading should reliably open the options page on click.
+
+### Repro
+On a bound-project window, click the cog. Nothing happens.
+
+### Likely cause
+The handler uses `<a href="#">` with `preventDefault`. When the popup loses focus during `chrome.runtime.openOptionsPage()`, Chrome may abort the navigation. A `<button>` with a robust fallback to `chrome.tabs.create({ url: chrome.runtime.getURL('src/options/index.html') })` is more dependable.
+
+### Owned files
+- Modify: `src/popup/index.ts` (replace `<a class="gear">` with `<button class="gear">`, add try/fallback)
+- Modify: `src/popup/styles.css` (button styles for `.gear`)
+
+### Acceptance
+- Clicking the cog opens the options page in a new tab.
+- Works even if `chrome.runtime.openOptionsPage()` doesn't fire — the fallback `chrome.tabs.create` opens the same page.
+- The cog gets a visible hover/focus state so it reads as interactive.

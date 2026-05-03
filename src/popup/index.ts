@@ -106,14 +106,36 @@ function renderUnboundView(windowId: number | undefined, windowTitle: string): v
   });
   r.append(saveBtn);
 
-  const opts = el('a', { class: 'gear', href: '#' }, ['Manage all projects →']);
+  const opts = el('a', { class: 'options-link', href: '#' }, ['Manage all projects →']);
   opts.addEventListener('click', (e) => {
     e.preventDefault();
-    chrome.runtime.openOptionsPage();
+    openOptionsRobustly();
   });
   const optsRow = el('div', { class: 'notice' });
   optsRow.append(opts);
   r.append(optsRow);
+}
+
+// T25 — robustly open the options page. `chrome.runtime.openOptionsPage()`
+// can no-op silently if the popup tears down mid-call. Fall back to opening
+// the options HTML in a new tab.
+function openOptionsRobustly(): void {
+  try {
+    if (typeof chrome.runtime.openOptionsPage === 'function') {
+      chrome.runtime.openOptionsPage(() => {
+        if (chrome.runtime.lastError) openOptionsViaTabs();
+      });
+      return;
+    }
+  } catch {
+    /* fall through */
+  }
+  openOptionsViaTabs();
+}
+
+function openOptionsViaTabs(): void {
+  const url = chrome.runtime.getURL('src/options/index.html');
+  void chrome.tabs.create({ url });
 }
 
 function renderProjectView(project: Project, windowTitle: string): void {
@@ -121,11 +143,17 @@ function renderProjectView(project: Project, windowTitle: string): void {
   r.replaceChildren();
 
   const heading = el('h1', {}, [project.name]);
-  const gear = el('a', { class: 'gear', href: '#', title: 'Manage all projects' }, ['⚙']);
-  gear.addEventListener('click', (e) => {
-    e.preventDefault();
-    chrome.runtime.openOptionsPage();
-  });
+  const gear = el(
+    'button',
+    {
+      class: 'gear',
+      type: 'button',
+      title: 'Manage all projects',
+      'aria-label': 'Manage all projects',
+    } as Partial<HTMLButtonElement> & { class?: string; 'aria-label'?: string },
+    ['⚙'],
+  );
+  gear.addEventListener('click', () => openOptionsRobustly());
   heading.append(gear);
   r.append(heading);
   r.append(el('div', { class: 'window-meta' }, [`Window: "${windowTitle}"`]));
@@ -219,8 +247,9 @@ function makeSnapRow(
       alertError(r.error);
       return;
     }
-    if (r.failures.length > 0) renderFailurePanel(r.failures);
-    else window.close();
+    // T23 — show a notice nudging the user to set Chrome's "Name window" since
+    // the extension API can't set it programmatically. Close on dismiss.
+    renderRestoreNotice(projectId, r.failures);
   });
   row.append(restoreBtn);
   if (deletable) {
@@ -255,6 +284,37 @@ function renderFailurePanel(failures: RestoreFailure[]): void {
   }
   panel.append(ul);
   root().append(panel);
+}
+
+// T23 — name-window restoration notice. After a restore, the new window is
+// already bound to the project (so the popup will show the right name when
+// reopened), but Chrome's MV3 extension API can't set the OS-level window
+// name programmatically. Best we can do is tell the user how to re-apply it.
+async function renderRestoreNotice(
+  projectId: string,
+  failures: RestoreFailure[],
+): Promise<void> {
+  const list = await send<{ ok: true; projects: { id: string; name: string }[] }>({
+    type: 'listProjects',
+  });
+  const proj = list.projects.find((p) => p.id === projectId);
+  const name = proj?.name ?? 'Project';
+
+  const banner = el('div', { class: 'banner restore-notice' });
+  banner.append(el('div', {}, [`Restored as "${name}".`]));
+  banner.append(
+    el('div', { class: 'subtle' }, [
+      'Right-click a tab in the new window → Name window → ',
+      el('strong', {}, [name]),
+      ' so Chrome shows the project name in the OS title bar.',
+    ]),
+  );
+  const close = el('button', {}, ['OK']);
+  close.addEventListener('click', () => window.close());
+  banner.append(close);
+  root().append(banner);
+
+  if (failures.length > 0) renderFailurePanel(failures);
 }
 
 function alertError(msg: string): void {

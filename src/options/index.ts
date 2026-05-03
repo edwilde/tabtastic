@@ -3,8 +3,9 @@ import type {
   ImportAllRequest,
   ImportAllResponse,
   ListProjectsResponse,
+  RestoreSnapshotResponse,
 } from '../lib/messages';
-import type { Project } from '../lib/types';
+import type { Project, Snapshot } from '../lib/types';
 
 function send<T>(msg: unknown): Promise<T> {
   return new Promise((resolve) => chrome.runtime.sendMessage(msg, resolve as (v: T) => void));
@@ -84,11 +85,13 @@ async function render(banner?: string): Promise<void> {
     tr.append(el('td', {}, [fmtTime(lastSaveOf(p))]));
 
     const actions = el('td', { class: 'actions' });
+    const restoreBtn = el('button', {}, ['Restore']);
+    restoreBtn.addEventListener('click', () => toggleRestorePanel(tr, p, restoreBtn));
     const renameBtn = el('button', {}, ['Rename']);
     renameBtn.addEventListener('click', () => beginRename(tr, p));
     const deleteBtn = el('button', { class: 'danger' }, ['Delete']);
     deleteBtn.addEventListener('click', () => beginDelete(tr, p));
-    actions.append(renameBtn, deleteBtn);
+    actions.append(restoreBtn, renameBtn, deleteBtn);
     tr.append(actions);
 
     tbody.append(tr);
@@ -114,6 +117,92 @@ function beginRename(tr: HTMLTableRowElement, p: Project): void {
     if (e.key === 'Enter') void finish(true);
     if (e.key === 'Escape') void finish(false);
   });
+}
+
+// T24 — expandable restore picker per project row. Shows every snapshot
+// (named first, then auto slots) with an Open button per entry.
+function toggleRestorePanel(
+  tr: HTMLTableRowElement,
+  p: Project,
+  btn: HTMLButtonElement,
+): void {
+  const next = tr.nextElementSibling as HTMLTableRowElement | null;
+  if (next?.classList.contains('restore-panel')) {
+    next.remove();
+    btn.textContent = 'Restore';
+    return;
+  }
+  btn.textContent = 'Close';
+  const panelRow = document.createElement('tr');
+  panelRow.className = 'restore-panel';
+  const cell = document.createElement('td');
+  cell.colSpan = tr.cells.length;
+  panelRow.append(cell);
+
+  const inner = el('div', { class: 'restore-panel-inner' });
+
+  const named = p.named;
+  const autoEntries = (['hour', 'day', 'week', 'month'] as const)
+    .map((slot) => ({ slot, snap: p.autoSlots[slot] }))
+    .filter((s): s is { slot: 'hour' | 'day' | 'week' | 'month'; snap: Snapshot } => !!s.snap);
+
+  if (named.length === 0 && autoEntries.length === 0) {
+    inner.append(el('div', { class: 'restore-empty' }, ['No snapshots yet for this project.']));
+  } else {
+    if (named.length > 0) {
+      inner.append(el('div', { class: 'restore-heading' }, ['Named snapshots']));
+      for (const s of named) {
+        inner.append(makeSnapshotEntry(p.id, s, s.label ?? '(unnamed)', fmtTime(s.takenAt)));
+      }
+    }
+    if (autoEntries.length > 0) {
+      inner.append(el('div', { class: 'restore-heading' }, ['Auto-saves']));
+      for (const { slot, snap } of autoEntries) {
+        const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1);
+        inner.append(makeSnapshotEntry(p.id, snap, slotLabel, fmtTime(snap.takenAt)));
+      }
+    }
+  }
+
+  cell.append(inner);
+  tr.after(panelRow);
+}
+
+function makeSnapshotEntry(
+  projectId: string,
+  snap: Snapshot,
+  label: string,
+  taken: string,
+): HTMLDivElement {
+  const row = el('div', { class: 'restore-entry' });
+  row.append(el('span', { class: 'restore-entry-label' }, [label]));
+  row.append(el('span', { class: 'restore-entry-time' }, [taken]));
+  const open = el('button', {}, ['Open in new window']);
+  open.addEventListener('click', async () => {
+    open.disabled = true;
+    open.textContent = 'Opening…';
+    const r = await send<RestoreSnapshotResponse>({
+      type: 'restoreSnapshot',
+      projectId,
+      snapshotId: snap.id,
+    });
+    open.disabled = false;
+    if (r.ok) {
+      open.textContent = 'Opened ✓';
+      if (r.failures.length > 0) {
+        row.append(
+          el('div', { class: 'restore-entry-failures' }, [
+            `${r.failures.length} tab${r.failures.length === 1 ? '' : 's'} could not be restored.`,
+          ]),
+        );
+      }
+    } else {
+      open.textContent = 'Open in new window';
+      row.append(el('div', { class: 'restore-entry-failures' }, [`Error: ${r.error}`]));
+    }
+  });
+  row.append(open);
+  return row;
 }
 
 function beginDelete(tr: HTMLTableRowElement, p: Project): void {

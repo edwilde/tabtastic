@@ -260,6 +260,65 @@ input[type='text']:focus {
   line-height: 1.6;
 }
 
+/* --- T24 — restore picker panel --- */
+
+tr.restore-panel td {
+  padding: 0;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.restore-panel-inner {
+  padding: 14px 18px 18px;
+  animation: slide-in 200ms ease-out;
+}
+.restore-heading {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+.restore-heading + .restore-heading {
+  margin-top: 16px;
+}
+.restore-entry {
+  display: grid;
+  grid-template-columns: 1fr 200px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  margin-bottom: 6px;
+}
+.restore-entry-label {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.restore-entry-time {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.restore-entry-failures {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--danger);
+}
+.restore-empty {
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 0;
+  font-size: 13px;
+}
+
 /* --- Banner --- */
 
 .banner {
