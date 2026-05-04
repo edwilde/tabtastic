@@ -24,7 +24,7 @@ Save and restore your Chrome project windows — tab groups, colors, names, and 
 
 1. Download the latest **`tabtastic-X.Y.Z.zip`** — either:
    - From the [GitHub Releases page](#) (one is auto-published on each tagged release), or
-   - From the `releases/` folder in this repo (`releases/tabtastic-0.2.0.zip` ships with the source for convenience), or
+   - From the `releases/` folder in this repo (`releases/tabtastic-0.3.0.zip` ships with the source for convenience), or
    - From the **Actions → CI → Artifacts** of any successful run.
 2. **Unzip it** somewhere stable (e.g. `~/Applications/tabtastic-0.1.0/`). Chrome loads from a folder, not the zip itself.
 3. Open `chrome://extensions` in Chrome.

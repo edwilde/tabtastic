@@ -2,7 +2,7 @@
 
 Backlog for the Tabtastic! Chrome extension (a.k.a. *Window Time Machine*).
 
-> **Status: ✅ All tickets shipped (T01–T25). Current version: 0.2.0.** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.2.0.zip`. CI workflow at `.github/workflows/ci.yml`.
+> **Status: ✅ All tickets shipped (T01–T26). Current version: 0.3.0.** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.3.0.zip`. CI workflow at `.github/workflows/ci.yml`.
 
 - **Design doc:** [`docs/plans/2026-05-01-chrome-project-snapshots-design.md`](docs/plans/2026-05-01-chrome-project-snapshots-design.md) — the validated design. Always trust this over the archived plan when they disagree.
 - **Archived plan (cache):** [`.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md`](.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md) — original monolithic plan with full code samples for every module. **Do not execute it directly** (the devils-advocate pass found blocking flaws), but **`/writing-plans` MUST read the relevant `Task N` section from this file when planning a ticket** — it captures the original vision, code structure, and test shapes that are still mostly correct. Each ticket below lists which archived task(s) to reference and which parts are now stale.
@@ -657,3 +657,21 @@ The handler uses `<a href="#">` with `preventDefault`. When the popup loses focu
 - Clicking the cog opens the options page in a new tab.
 - Works even if `chrome.runtime.openOptionsPage()` doesn't fire — the fallback `chrome.tabs.create` opens the same page.
 - The cog gets a visible hover/focus state so it reads as interactive.
+
+---
+
+## ✅ T26 — Branded icon set (clock-in-gear)
+
+**Priority:** P5 · **Blockers:** T07 · **Parallelism:** standalone
+
+### Goal
+Replace the placeholder "T" letter icons with a branded clock-in-gear silhouette on Tabtastic teal — the visual metaphor for *Window Time Machine* (clock = time, gear = working machinery, 12 teeth = 12 hours).
+
+### Owned files
+- Modify: `src/assets/icon-16.png`, `icon-32.png`, `icon-48.png`, `icon-128.png` (regenerated programmatically — no third-party assets, no licensing entanglement)
+
+### Acceptance
+- All four sizes regenerated with the new design.
+- Recognisable silhouette at 16×16 (clock face + visible gear teeth around the rim).
+- Single source script generates all four PNGs from one renderer for consistency.
+- Hands point to 10:10 (the classic "clock looks like a clock" pose).
