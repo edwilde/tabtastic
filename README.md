@@ -24,7 +24,7 @@ Save and restore your Chrome project windows — tab groups, colors, names, and 
 
 1. Download the latest **`tabtastic-X.Y.Z.zip`** — either:
    - From the [GitHub Releases page](#) (one is auto-published on each tagged release), or
-   - From the `releases/` folder in this repo (`releases/tabtastic-0.3.0.zip` ships with the source for convenience), or
+   - From the `releases/` folder in this repo (`releases/tabtastic-0.4.0.zip` ships with the source for convenience), or
    - From the **Actions → CI → Artifacts** of any successful run.
 2. **Unzip it** somewhere stable (e.g. `~/Applications/tabtastic-0.1.0/`). Chrome loads from a folder, not the zip itself.
 3. Open `chrome://extensions` in Chrome.
@@ -32,7 +32,11 @@ Save and restore your Chrome project windows — tab groups, colors, names, and 
 5. Click **Load unpacked** and select the unzipped folder.
 6. The Tabtastic! icon appears in the toolbar — pin it for quick access.
 
-> **To update:** download the new zip, unzip over the old folder, then click the refresh ↻ icon on the extension card in `chrome://extensions`.
+> **To update without losing your projects:** download the new zip and **unzip into the same folder** as before (overwriting the old contents), then click the refresh ↻ icon on the extension card in `chrome://extensions`. As long as the load-folder path is unchanged, the extension ID stays stable and `chrome.storage.local` keeps every project and snapshot intact.
+>
+> **Belt-and-braces:** before any update, open the options page → **Export all** → save the JSON. If anything goes sideways, **Import** restores everything.
+>
+> Loading from a *different* folder gives the extension a new ID — a fresh install with empty storage. Avoid this for in-place upgrades.
 
 ### Option B — build from source
 

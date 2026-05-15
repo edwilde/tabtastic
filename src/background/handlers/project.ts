@@ -1,4 +1,5 @@
 import { autoSave, bindings, ensureHydrated, storage } from '../runtime';
+import { updateIconsForWindow } from '../icon-state';
 import type {
   DeleteProjectRequest,
   FindProjectByNameRequest,
@@ -61,6 +62,7 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
         await storage.upsertProject(project);
         await bindings.bind(msg.windowId, id);
         await autoSave.tick(msg.windowId, id);
+        void updateIconsForWindow(msg.windowId);
         sendResponse({ ok: true, projectId: id });
       } else if (msg.type === 'rebindWindow') {
         const project = await storage.getProject(msg.projectId);
@@ -72,6 +74,7 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
         await bindings.unbindProject(msg.projectId);
         await bindings.bind(msg.windowId, msg.projectId);
         await autoSave.tick(msg.windowId, msg.projectId);
+        void updateIconsForWindow(msg.windowId);
         sendResponse({ ok: true });
       } else if (msg.type === 'listProjects') {
         const projects = await storage.listProjects();
@@ -86,8 +89,10 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
         await storage.upsertProject(p);
         sendResponse({ ok: true });
       } else if (msg.type === 'deleteProject') {
+        const wid = bindings.windowIdFor(msg.projectId);
         await storage.deleteProject(msg.projectId);
         await bindings.unbindProject(msg.projectId);
+        if (wid !== undefined) void updateIconsForWindow(wid);
         sendResponse({ ok: true });
       } else if (msg.type === 'findProjectByName') {
         const all = await storage.listProjects();

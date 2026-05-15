@@ -2,3 +2,4 @@
 // Each ticket adds: import './<feature>';
 import './tabs';
 import './window-focus';
+import './icon';

@@ -2,7 +2,7 @@
 
 Backlog for the Tabtastic! Chrome extension (a.k.a. *Window Time Machine*).
 
-> **Status: ✅ All tickets shipped (T01–T26). Current version: 0.3.0.** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.3.0.zip`. CI workflow at `.github/workflows/ci.yml`.
+> **Status: ✅ All tickets shipped (T01–T27). Current version: 0.4.0.** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.4.0.zip`. CI workflow at `.github/workflows/ci.yml`.
 
 - **Design doc:** [`docs/plans/2026-05-01-chrome-project-snapshots-design.md`](docs/plans/2026-05-01-chrome-project-snapshots-design.md) — the validated design. Always trust this over the archived plan when they disagree.
 - **Archived plan (cache):** [`.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md`](.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md) — original monolithic plan with full code samples for every module. **Do not execute it directly** (the devils-advocate pass found blocking flaws), but **`/writing-plans` MUST read the relevant `Task N` section from this file when planning a ticket** — it captures the original vision, code structure, and test shapes that are still mostly correct. Each ticket below lists which archived task(s) to reference and which parts are now stale.
@@ -657,6 +657,34 @@ The handler uses `<a href="#">` with `preventDefault`. When the popup loses focu
 - Clicking the cog opens the options page in a new tab.
 - Works even if `chrome.runtime.openOptionsPage()` doesn't fire — the fallback `chrome.tabs.create` opens the same page.
 - The cog gets a visible hover/focus state so it reads as interactive.
+
+---
+
+## ✅ T27 — Dynamic icon: grey when window is unbound, teal when bound
+
+**Priority:** P5 · **Blockers:** T07, T26 · **Parallelism:** standalone
+
+### Goal
+Visual cue at a glance: the toolbar icon is **slate grey** on any window that isn't bound to a Tabtastic! project, and **teal** the moment a project is bound. Helps spot stray windows that haven't been saved yet without opening the popup.
+
+### Owned files
+- Create: `src/assets/icon-grey-{16,32,48,128}.png`, `src/assets/icon-grey.svg`
+- Create: `src/background/icon-state.ts` (helpers: `updateIconForTab`, `updateIconsForWindow`)
+- Create: `src/background/listeners/icon.ts` (registers `tabs.onActivated`, `tabs.onCreated`, `tabs.onAttached`, `windows.onFocusChanged`)
+- Modify: `src/background/handlers/project.ts` (refresh icons after bind, rebind, deleteProject)
+- Modify: `src/background/handlers/snapshot.ts` (refresh icons after restoreSnapshot)
+- Modify: `src/manifest.ts` (`action.default_icon` points at the grey variant so new tabs start grey before the SW runs)
+
+### Acceptance
+- A fresh window with no project shows the **grey** icon.
+- After **Save this window as a project**, the icon flips to **teal** without reopening the popup.
+- Switching to another bound window keeps the icon teal; switching to an unbound window flips it grey.
+- Restoring from an auto/named snapshot opens a new window and that window's icon is immediately teal.
+- Deleting a project's binding from the options page flips the icon back to grey on any tab in that window.
+
+### Pitfalls
+- `chrome.action.setIcon` is per-tab; setting it on a window-level state means iterating tabs in the window. We dispatch updates on `onActivated`/`onCreated`/`onAttached` rather than every tab unconditionally to keep the work small.
+- The icon for tabs that already exist when the SW wakes will be whatever `default_icon` was — grey. The listeners refresh them once the user interacts.
 
 ---
 

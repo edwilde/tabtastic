@@ -1,4 +1,5 @@
 import { bindings, browser, ensureHydrated, storage } from '../runtime';
+import { updateIconsForWindow } from '../icon-state';
 import { captureSnapshot } from '../../lib/capture';
 import { restoreSnapshot } from '../../lib/restore';
 import type {
@@ -62,6 +63,7 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
         const result = await restoreSnapshot(browser, snap);
         // Bind the new window to this project so auto-save resumes.
         await bindings.bind(result.windowId, project.id);
+        void updateIconsForWindow(result.windowId);
         sendResponse({ ok: true, windowId: result.windowId, failures: result.failures });
       } else if (msg.type === 'deleteSnapshot') {
         const project = await storage.getProject(msg.projectId);
