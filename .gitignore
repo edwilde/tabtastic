@@ -9,3 +9,8 @@ dist/
 # CI also produces the same artifact on every run.
 !releases/
 
+# But the per-machine "unpacked install" folder is not tracked — it's the
+# stable load path users (and the maintainer) point Chrome at, kept free of
+# version numbers so the extension ID never changes.
+releases/tabtastic/
+
