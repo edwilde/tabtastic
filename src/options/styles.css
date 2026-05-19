@@ -64,7 +64,7 @@ body {
 /* --- Header --- */
 
 header {
-  max-width: 920px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 40px 32px 20px;
   display: grid;
@@ -109,7 +109,7 @@ header .actions {
 /* --- Main --- */
 
 main {
-  max-width: 920px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 24px 32px 64px;
 }
@@ -284,14 +284,18 @@ tr.restore-panel td {
 }
 .restore-entry {
   display: grid;
-  grid-template-columns: 1fr 200px auto;
+  grid-template-columns: minmax(140px, 1fr) auto 170px auto;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
+  gap: 18px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   margin-bottom: 6px;
+  transition: border-color 120ms;
+}
+.restore-entry:hover {
+  border-color: var(--border-strong);
 }
 .restore-entry-label {
   font-weight: 500;
@@ -301,10 +305,31 @@ tr.restore-panel td {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.restore-entry-counts {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.restore-entry-counts .restore-count-num {
+  color: var(--fg-soft);
+  font-weight: 500;
+}
+.restore-entry-counts .restore-count-unit {
+  margin-right: 2px;
+}
+.restore-entry-counts .restore-count-sep {
+  margin: 0 8px;
+  color: var(--border-strong);
+}
 .restore-entry-time {
   color: var(--muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 .restore-entry-failures {
   grid-column: 1 / -1;

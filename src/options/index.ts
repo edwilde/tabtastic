@@ -168,6 +168,10 @@ function toggleRestorePanel(
   tr.after(panelRow);
 }
 
+function tabCountOf(snap: Snapshot): number {
+  return snap.groups.reduce((n, g) => n + g.tabs.length, 0) + snap.ungroupedTabs.length;
+}
+
 function makeSnapshotEntry(
   projectId: string,
   snap: Snapshot,
@@ -176,6 +180,19 @@ function makeSnapshotEntry(
 ): HTMLDivElement {
   const row = el('div', { class: 'restore-entry' });
   row.append(el('span', { class: 'restore-entry-label' }, [label]));
+
+  const tabs = tabCountOf(snap);
+  const groups = snap.groups.length;
+  const counts = el('span', { class: 'restore-entry-counts' });
+  counts.append(
+    el('span', { class: 'restore-count-num' }, [String(tabs)]),
+    el('span', { class: 'restore-count-unit' }, [tabs === 1 ? ' tab' : ' tabs']),
+    el('span', { class: 'restore-count-sep' }, ['·']),
+    el('span', { class: 'restore-count-num' }, [String(groups)]),
+    el('span', { class: 'restore-count-unit' }, [groups === 1 ? ' group' : ' groups']),
+  );
+  row.append(counts);
+
   row.append(el('span', { class: 'restore-entry-time' }, [taken]));
   const open = el('button', {}, ['Open in new window']);
   open.addEventListener('click', async () => {

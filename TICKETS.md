@@ -2,7 +2,7 @@
 
 Backlog for the Tabtastic! Chrome extension (a.k.a. *Window Time Machine*).
 
-> **Status: ✅ All tickets shipped (T01–T27). Current version: 0.4.0.** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.4.0.zip`. CI workflow at `.github/workflows/ci.yml`.
+> **Status: ✅ All tickets shipped (T01–T28). Current version: 0.5.0.** 46 tests passing, typecheck clean, build clean. Loadable extension at `releases/tabtastic-0.5.0.zip`. CI workflow at `.github/workflows/ci.yml`.
 
 - **Design doc:** [`docs/plans/2026-05-01-chrome-project-snapshots-design.md`](docs/plans/2026-05-01-chrome-project-snapshots-design.md) — the validated design. Always trust this over the archived plan when they disagree.
 - **Archived plan (cache):** [`.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md`](.ai/implementation-plans/archive/2026-05-01-tabtastic-superseded-by-tickets.md) — original monolithic plan with full code samples for every module. **Do not execute it directly** (the devils-advocate pass found blocking flaws), but **`/writing-plans` MUST read the relevant `Task N` section from this file when planning a ticket** — it captures the original vision, code structure, and test shapes that are still mostly correct. Each ticket below lists which archived task(s) to reference and which parts are now stale.
@@ -657,6 +657,28 @@ The handler uses `<a href="#">` with `preventDefault`. When the popup loses focu
 - Clicking the cog opens the options page in a new tab.
 - Works even if `chrome.runtime.openOptionsPage()` doesn't fire — the fallback `chrome.tabs.create` opens the same page.
 - The cog gets a visible hover/focus state so it reads as interactive.
+
+---
+
+## ✅ T28 — Tab + group counts in the Restore picker
+
+**Priority:** P5 · **Blockers:** T24 · **Parallelism:** standalone
+
+### Goal
+Each snapshot in the options Restore picker shows how big it is — `N tabs · M groups` — so the user can compare at a glance which snapshot to open without restoring blindly. The management page widens to 1080px to give the new column room without crowding actions.
+
+### Owned files
+- Modify: `src/options/index.ts` — `tabCountOf` helper; `makeSnapshotEntry` renders a counts column between label and time
+- Modify: `src/options/styles.css` — page `max-width: 920px → 1080px`; `.restore-entry` grid: `1fr 200px auto → minmax(140px,1fr) auto 170px auto`; new `.restore-entry-counts` styling with tabular nums and muted separator
+
+### Acceptance
+- Each restore-picker row shows `[Label] [N tabs · M groups] [time] [Open]`
+- Tab count = sum of `groups[].tabs.length` + `ungroupedTabs.length`
+- Group count = `groups.length`
+- Singular/plural handled (`1 tab` / `2 tabs`, `1 group` / `2 groups`)
+- Numerals use tabular-nums so columns align across rows
+- Light & dark mode both honor existing palette tokens (`--muted`, `--fg-soft`, `--border-strong`)
+- Options page now sits at 1080px max-width
 
 ---
 
