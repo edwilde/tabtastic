@@ -30,12 +30,19 @@ function fmtTime(t: number): string {
   return new Date(t).toLocaleString();
 }
 
-function lastSaveOf(p: Project): number {
+function newestSnapshotOf(p: Project): Snapshot | null {
   const auto = (['hour', 'day', 'week', 'month'] as const)
-    .map((k) => p.autoSlots[k]?.takenAt ?? 0)
-    .reduce((a, b) => Math.max(a, b), 0);
-  const named = p.named.map((s) => s.takenAt).reduce((a, b) => Math.max(a, b), 0);
-  return Math.max(auto, named);
+    .map((k) => p.autoSlots[k])
+    .filter((s): s is Snapshot => s !== null);
+  const all = [...auto, ...p.named];
+  if (all.length === 0) return null;
+  return all.reduce((a, b) => (a.takenAt > b.takenAt ? a : b));
+}
+
+function formatSize(snap: Snapshot): string {
+  const tabs = tabCountOf(snap);
+  const groups = snap.groups.length;
+  return `${tabs} ${tabs === 1 ? 'tab' : 'tabs'} · ${groups} ${groups === 1 ? 'group' : 'groups'}`;
 }
 
 function autoCount(p: Project): number {
@@ -82,17 +89,48 @@ async function render(banner?: string): Promise<void> {
     tr.append(nameTd);
     tr.append(el('td', {}, [`${autoCount(p)}/4`]));
     tr.append(el('td', {}, [String(p.named.length)]));
-    tr.append(el('td', {}, [fmtTime(lastSaveOf(p))]));
+
+    // T29 — Last save cell shows timestamp + size of the latest snapshot.
+    const newest = newestSnapshotOf(p);
+    const lastCell = el('td');
+    if (newest) {
+      lastCell.append(
+        el('div', {}, [fmtTime(newest.takenAt)]),
+        el('div', { class: 'last-size' }, [formatSize(newest)]),
+      );
+    } else {
+      lastCell.textContent = '—';
+    }
+    tr.append(lastCell);
 
     const actions = el('td', { class: 'actions' });
-    const restoreBtn = el('button', {}, ['Restore']);
-    restoreBtn.addEventListener('click', () => toggleRestorePanel(tr, p, restoreBtn));
+    const restoreBtn = el('button', { class: 'disclosure' }, ['Snapshots ▸']);
+    restoreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleRestorePanel(tr, p, restoreBtn);
+    });
     const renameBtn = el('button', {}, ['Rename']);
-    renameBtn.addEventListener('click', () => beginRename(tr, p));
+    renameBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      beginRename(tr, p);
+    });
     const deleteBtn = el('button', { class: 'danger' }, ['Delete']);
-    deleteBtn.addEventListener('click', () => beginDelete(tr, p));
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      beginDelete(tr, p);
+    });
     actions.append(restoreBtn, renameBtn, deleteBtn);
     tr.append(actions);
+
+    // T30 — whole-row click toggles the snapshots panel (less alarming than
+    // a "Restore" action button). Buttons + inputs handle their own events
+    // via stopPropagation; everything else falls through to row toggle.
+    tr.classList.add('clickable-row');
+    tr.addEventListener('click', (e) => {
+      const target = e.target as Element | null;
+      if (target?.closest('button, input, a')) return;
+      toggleRestorePanel(tr, p, restoreBtn);
+    });
 
     tbody.append(tr);
   }
@@ -129,10 +167,12 @@ function toggleRestorePanel(
   const next = tr.nextElementSibling as HTMLTableRowElement | null;
   if (next?.classList.contains('restore-panel')) {
     next.remove();
-    btn.textContent = 'Restore';
+    btn.textContent = 'Snapshots ▸';
+    tr.classList.remove('row-expanded');
     return;
   }
-  btn.textContent = 'Close';
+  btn.textContent = 'Snapshots ▾';
+  tr.classList.add('row-expanded');
   const panelRow = document.createElement('tr');
   panelRow.className = 'restore-panel';
   const cell = document.createElement('td');
@@ -186,10 +226,10 @@ function makeSnapshotEntry(
   const counts = el('span', { class: 'restore-entry-counts' });
   counts.append(
     el('span', { class: 'restore-count-num' }, [String(tabs)]),
-    el('span', { class: 'restore-count-unit' }, [tabs === 1 ? ' tab' : ' tabs']),
+    el('span', { class: 'restore-count-unit' }, [tabs === 1 ? 'tab' : 'tabs']),
     el('span', { class: 'restore-count-sep' }, ['·']),
     el('span', { class: 'restore-count-num' }, [String(groups)]),
-    el('span', { class: 'restore-count-unit' }, [groups === 1 ? ' group' : ' groups']),
+    el('span', { class: 'restore-count-unit' }, [groups === 1 ? 'group' : 'groups']),
   );
   row.append(counts);
 

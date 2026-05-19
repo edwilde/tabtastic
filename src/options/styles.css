@@ -148,6 +148,21 @@ tbody tr {
 tbody tr:hover {
   background: var(--surface-2);
 }
+tbody tr.clickable-row {
+  cursor: pointer;
+}
+tbody tr.row-expanded {
+  background: var(--surface-2);
+}
+tbody tr.row-expanded td:first-child {
+  font-weight: 600;
+}
+button.disclosure {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  min-width: 110px;
+  text-align: left;
+}
 tbody tr:last-child td {
   border-bottom: none;
 }
@@ -319,11 +334,19 @@ tr.restore-panel td {
   font-weight: 500;
 }
 .restore-entry-counts .restore-count-unit {
-  margin-right: 2px;
+  margin-left: 4px;
 }
 .restore-entry-counts .restore-count-sep {
   margin: 0 8px;
   color: var(--border-strong);
+}
+
+.last-size {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 .restore-entry-time {
   color: var(--muted);
