@@ -61,7 +61,11 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
           return;
         }
         const result = await restoreSnapshot(browser, snap);
-        // Bind the new window to this project so auto-save resumes.
+        // Transfer the binding to the restored window so auto-save resumes
+        // here. If the project was still bound to the source window (it's
+        // open alongside the restore), bind() would no-op under first-wins;
+        // unbind first so the new window always wins.
+        await bindings.unbindProject(project.id);
         await bindings.bind(result.windowId, project.id);
         void updateIconsForWindow(result.windowId);
         sendResponse({ ok: true, windowId: result.windowId, failures: result.failures });
