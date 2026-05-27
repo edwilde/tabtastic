@@ -1,5 +1,6 @@
 import { autoSave, bindings, ensureHydrated, storage } from '../runtime';
 import { updateIconsForWindow } from '../icon-state';
+import { bestTitleMatch } from '../../lib/match';
 import type {
   DeleteProjectRequest,
   FindProjectByNameRequest,
@@ -8,6 +9,7 @@ import type {
   RebindWindowRequest,
   RenameProjectRequest,
   SaveAsProjectRequest,
+  SuggestRebindRequest,
 } from '../../lib/messages';
 
 type Req =
@@ -17,7 +19,8 @@ type Req =
   | ListProjectsRequest
   | RenameProjectRequest
   | DeleteProjectRequest
-  | FindProjectByNameRequest;
+  | FindProjectByNameRequest
+  | SuggestRebindRequest;
 
 chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
   if (
@@ -27,7 +30,8 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
     msg?.type !== 'listProjects' &&
     msg?.type !== 'renameProject' &&
     msg?.type !== 'deleteProject' &&
-    msg?.type !== 'findProjectByName'
+    msg?.type !== 'findProjectByName' &&
+    msg?.type !== 'suggestRebind'
   ) {
     return undefined;
   }
@@ -98,6 +102,15 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
         const all = await storage.listProjects();
         const project = all.find((p) => p.name === msg.name) ?? null;
         sendResponse({ ok: true, project });
+      } else if (msg.type === 'suggestRebind') {
+        const win = await chrome.windows.get(msg.windowId, { populate: true });
+        const title = (win as unknown as { title?: string }).title ?? '';
+        const all = await storage.listProjects();
+        // Skip projects already bound to a live window — first-wins binding
+        // semantics mean re-binding them would no-op anyway.
+        const candidates = all.filter((p) => bindings.windowIdFor(p.id) === undefined);
+        const suggestion = bestTitleMatch(title, candidates);
+        sendResponse({ ok: true, suggestion });
       }
     } catch (e) {
       sendResponse({ ok: false, error: (e as Error).message });

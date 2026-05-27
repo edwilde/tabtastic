@@ -56,6 +56,15 @@ export type DeleteProjectResponse = { ok: true } | { ok: false; error: string };
 
 export type FindProjectByNameRequest = { type: 'findProjectByName'; name: string };
 export type FindProjectByNameResponse = { ok: true; project: Project | null };
+
+export type SuggestRebindRequest = { type: 'suggestRebind'; windowId: number };
+export type SuggestRebindResponse = {
+  ok: true;
+  // Best single suggestion when we have high confidence (window title carries
+  // the project name via Chrome's "Name window"). The popup shows this above
+  // the form as a one-click rebind.
+  suggestion: { project: Project; reason: 'name-window' | 'title-contains' } | null;
+};
 // === /T06 ===
 
 // === T13/T14 — export/import ===

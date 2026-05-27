@@ -1,6 +1,6 @@
 {
   "name": "tabtastic",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Window Time Machine — save and restore your Chrome project windows: tab groups, colors, names, and all.",
   "type": "module",
   "private": true,

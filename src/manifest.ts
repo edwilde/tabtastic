@@ -5,7 +5,7 @@ export default defineManifest({
   name: 'Tabtastic!',
   description:
     'Window Time Machine — save and restore your Chrome project windows: tab groups, colors, names, and all.',
-  version: '0.5.1',
+  version: '0.6.0',
   // === T01 base permissions ===
   // === T10 adds: alarms ===
   permissions: ['tabs', 'tabGroups', 'windows', 'storage', 'alarms'],

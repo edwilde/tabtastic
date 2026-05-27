@@ -1,8 +1,10 @@
 import type {
   GetCurrentResponse,
+  ListProjectsResponse,
   RestoreSnapshotResponse,
   SaveAsProjectResponse,
   FindProjectByNameResponse,
+  SuggestRebindResponse,
 } from '../lib/messages';
 import type { Project, Snapshot, RestoreFailure } from '../lib/types';
 
@@ -51,60 +53,118 @@ async function render(): Promise<void> {
   }
 }
 
-function renderUnboundView(windowId: number | undefined, windowTitle: string): void {
+async function renderUnboundView(windowId: number | undefined, windowTitle: string): Promise<void> {
   const r = root();
   r.replaceChildren();
   r.append(el('h1', {}, ['Tabtastic!']));
   r.append(el('div', { class: 'window-meta' }, ['No project bound to this window']));
 
+  // Fetch existing projects + a title-based suggestion in parallel so the
+  // dropdown and the auto-suggest banner can render in one pass.
+  const [listResp, sugResp] = await Promise.all([
+    send<ListProjectsResponse>({ type: 'listProjects' }),
+    windowId !== undefined
+      ? send<SuggestRebindResponse>({ type: 'suggestRebind', windowId })
+      : Promise.resolve({ ok: true, suggestion: null } as SuggestRebindResponse),
+  ]);
+  const allProjects = listResp.ok ? listResp.projects : [];
+  const suggestion = sugResp.ok ? sugResp.suggestion : null;
+
+  // Strong suggestion banner — shown above the form for one-click rebind when
+  // the window title already carries the project name (Chrome "Name window").
+  if (suggestion && windowId !== undefined) {
+    const banner = el('div', { class: 'banner' });
+    const lead =
+      suggestion.reason === 'name-window'
+        ? `This window is named "${suggestion.project.name}". Rebind to that project?`
+        : `Looks like project "${suggestion.project.name}". Rebind this window to it?`;
+    banner.append(el('div', {}, [lead]));
+    const rebindBtn = el('button', { class: 'primary' }, [`Rebind to "${suggestion.project.name}"`]);
+    rebindBtn.addEventListener('click', async () => {
+      await send({ type: 'rebindWindow', windowId, projectId: suggestion.project.id });
+      render();
+    });
+    banner.append(rebindBtn);
+    r.append(banner);
+  }
+
+  // Combobox: free text + datalist of every existing project. Picking an
+  // existing name flips the primary button to "Rebind"; a new name keeps it
+  // as "Save as new project".
+  const listId = 'tt-project-names';
   const input = el('input', {
     type: 'text',
     placeholder: 'Project name',
     value: windowTitle,
+    // Wire the input to the datalist below.
+    autocomplete: 'off',
   }) as HTMLInputElement;
+  input.setAttribute('list', listId);
   r.append(input);
+
+  const datalist = document.createElement('datalist');
+  datalist.id = listId;
+  for (const p of allProjects) {
+    const opt = document.createElement('option');
+    opt.value = p.name;
+    datalist.append(opt);
+  }
+  r.append(datalist);
+
+  // Hint listing existing projects when there are any but the user hasn't
+  // typed — makes the dropdown affordance discoverable.
+  if (allProjects.length > 0) {
+    r.append(
+      el('div', { class: 'window-meta hint' }, [
+        `Tip: pick an existing project from the dropdown to relink this window.`,
+      ]),
+    );
+  }
 
   const conflictBanner = el('div', { class: 'banner', hidden: true } as unknown as HTMLDivElement);
   r.append(conflictBanner);
 
-  let lastFoundProjectId: string | null = null;
+  const primaryBtn = el('button', { class: 'primary' }, ['Save this window as a project']);
+  r.append(primaryBtn);
 
-  const checkName = async (): Promise<void> => {
+  let matchedProjectId: string | null = null;
+
+  const updateMatch = async (): Promise<void> => {
     const name = input.value.trim();
     conflictBanner.replaceChildren();
     conflictBanner.hidden = true;
-    lastFoundProjectId = null;
+    matchedProjectId = null;
+    primaryBtn.textContent = 'Save this window as a project';
     if (!name) return;
+    // Fast local hit first (covers the dropdown-selection path without a
+    // round-trip), then a server check for canonical casing/whitespace.
+    const local = allProjects.find((p) => p.name.toLowerCase() === name.toLowerCase());
+    if (local) {
+      matchedProjectId = local.id;
+      primaryBtn.textContent = `Rebind to "${local.name}"`;
+      return;
+    }
     const r2 = await send<FindProjectByNameResponse>({ type: 'findProjectByName', name });
     if (r2.ok && r2.project) {
-      lastFoundProjectId = r2.project.id;
-      conflictBanner.hidden = false;
-      conflictBanner.append(
-        el('div', {}, [
-          `A project named "${r2.project.name}" already exists. Rebind this window to it (keeps existing snapshots)?`,
-        ]),
-      );
-      const rebindBtn = el('button', {}, ['Rebind to existing']);
-      rebindBtn.addEventListener('click', async () => {
-        if (windowId === undefined || !lastFoundProjectId) return;
-        await send({ type: 'rebindWindow', windowId, projectId: lastFoundProjectId });
-        render();
-      });
-      conflictBanner.append(rebindBtn);
+      matchedProjectId = r2.project.id;
+      primaryBtn.textContent = `Rebind to "${r2.project.name}"`;
     }
   };
-  input.addEventListener('input', () => void checkName());
-  void checkName();
+  input.addEventListener('input', () => void updateMatch());
+  void updateMatch();
 
-  const saveBtn = el('button', { class: 'primary' }, ['Save this window as a project']);
-  saveBtn.addEventListener('click', async () => {
+  primaryBtn.addEventListener('click', async () => {
     const name = input.value.trim();
     if (!name || windowId === undefined) return;
+    if (matchedProjectId) {
+      await send({ type: 'rebindWindow', windowId, projectId: matchedProjectId });
+      render();
+      return;
+    }
     const r2 = await send<SaveAsProjectResponse>({ type: 'saveAsProject', windowId, name });
     if (r2.ok) render();
     else alertError(r2.error);
   });
-  r.append(saveBtn);
 
   const opts = el('a', { class: 'options-link', href: '#' }, ['Manage all projects →']);
   opts.addEventListener('click', (e) => {
