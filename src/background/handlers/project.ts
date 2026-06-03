@@ -1,5 +1,6 @@
 import { autoSave, bindings, ensureHydrated, storage } from '../runtime';
 import { updateIconsForWindow } from '../icon-state';
+import { reconcileBindings } from '../reconcile';
 import { bestTitleMatch } from '../../lib/match';
 import type {
   DeleteProjectRequest,
@@ -39,6 +40,9 @@ chrome.runtime.onMessage.addListener((msg: Req, _sender, sendResponse) => {
     await ensureHydrated();
     try {
       if (msg.type === 'getCurrent') {
+        // Auto-bind any named-but-unbound windows before reporting state, so the
+        // popup reflects the link without the user touching the dropdown.
+        await reconcileBindings();
         // T22 — populate: true so `title` is hydrated. When the user has set
         // Chrome's "Name window" value, the OS title prefix surfaces through
         // this field; otherwise it falls back to the active tab's title.

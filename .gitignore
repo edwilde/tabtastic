@@ -5,6 +5,10 @@ dist/
 .env
 .env.local
 
+# Local code-intelligence / editor tooling artifacts.
+.codegraph/
+.cursor/
+
 # Releases ARE committed (so the prebuilt zip ships with the source).
 # CI also produces the same artifact on every run.
 !releases/
